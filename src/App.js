@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import axios from 'axios';
+import React, { useState } from 'react';
 import './App.css';
 
 function App() {
@@ -25,12 +25,32 @@ function App() {
       });
       setWeatherData(response.data);
     } catch (err) {
-      if (err.response && err.response.status === 404) {
-        setError(`City "${cityName}" not found. Please try again.`);
+      console.error("API Error:", err); // Log the full error for debugging
+      let errorMessage = 'An error occurred while fetching weather data.';
+      if (err.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        console.error("Error Response Data:", err.response.data);
+        console.error("Error Response Status:", err.response.status);
+        console.error("Error Response Headers:", err.response.headers);
+        if (err.response.status === 401) {
+          errorMessage = 'API key error. Please check if the key is correct and active.';
+        } else if (err.response.status === 404) {
+          errorMessage = `City "${cityName}" not found. Please try again.`;
+        } else if (err.response.data && err.response.data.message) {
+          // Use the message from the API if available
+          errorMessage = `API Error: ${err.response.data.message}`;
+        }
+      } else if (err.request) {
+        // The request was made but no response was received
+        console.error("Error Request:", err.request);
+        errorMessage = 'Network error: Could not reach the weather service.';
       } else {
-        setError('An error occurred while fetching weather data.');
-        console.error(err); // Log the full error for debugging
+        // Something happened in setting up the request that triggered an Error
+        console.error('Error', err.message);
+        errorMessage = `Error: ${err.message}`;
       }
+      setError(errorMessage);
       setWeatherData(null);
     } finally {
       setLoading(false);
